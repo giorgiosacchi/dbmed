@@ -1,0 +1,1408 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Interrogatore di database medici</title>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <style>
+    :root {
+      --bg: #eef4fb;
+      --bg-soft: #f8fbff;
+      --surface: #ffffff;
+      --surface-2: #edf5fb;
+      --surface-3: #f7fafc;
+      --text: #132238;
+      --muted: #5b6d83;
+      --border: #d6e1ed;
+      --accent: #2367d1;
+      --accent-2: #144ea8;
+      --accent-soft: #e8f1ff;
+      --accent-text: #ffffff;
+      --search-bg: linear-gradient(135deg, #1d63d2, #0b8fb3);
+      --search-bg-hover: linear-gradient(135deg, #174fa9, #087a99);
+      --search-text: #ffffff;
+      --danger: #b42318;
+      --ok: #027a48;
+      --shadow: 0 18px 44px rgba(23, 42, 70, 0.10);
+      --shadow-soft: 0 10px 26px rgba(23, 42, 70, 0.07);
+      --code-bg: #0f172a;
+      --code-text: #e5e7eb;
+      --row-alt: #f8fbff;
+      --thead: #e9f2fb;
+    }
+
+    [data-theme="dark"] {
+      --bg: #08111f;
+      --bg-soft: #101b2e;
+      --surface: #121d30;
+      --surface-2: #1b2940;
+      --surface-3: #172338;
+      --text: #f3f7ff;
+      --muted: #b2bfd4;
+      --border: #334561;
+      --accent: #8bb8ff;
+      --accent-2: #b6d1ff;
+      --accent-soft: #162b4d;
+      --accent-text: #071326;
+      --search-bg: linear-gradient(135deg, #8bb8ff, #6ee7d8);
+      --search-bg-hover: linear-gradient(135deg, #b6d1ff, #9ff3ea);
+      --search-text: #071326;
+      --danger: #ff9b8f;
+      --ok: #7bdba7;
+      --shadow: 0 18px 44px rgba(0, 0, 0, 0.38);
+      --shadow-soft: 0 10px 26px rgba(0, 0, 0, 0.26);
+      --code-bg: #050816;
+      --code-text: #f1f5f9;
+      --row-alt: #101b2d;
+      --thead: #20314b;
+    }
+
+    body[data-palette="mediterraneo"] {
+      --bg: #f4fbfb; --bg-soft: #ecf7f5; --surface: #ffffff; --surface-2: #e4f3f0; --surface-3: #f5fbfa;
+      --text: #113239; --muted: #4f6870; --border: #c9e1df; --accent: #0f766e; --accent-2: #0b5f59;
+      --accent-soft: #dff5f1; --accent-text: #ffffff; --search-bg: linear-gradient(135deg, #0f766e, #2563eb);
+      --search-bg-hover: linear-gradient(135deg, #0b5f59, #1d4ed8); --search-text: #ffffff; --thead: #dff5f1;
+    }
+    body[data-theme="dark"][data-palette="mediterraneo"] {
+      --bg: #071a1c; --bg-soft: #0d2428; --surface: #102c31; --surface-2: #143b40; --surface-3: #0c2529;
+      --text: #eefdfb; --muted: #a6c9c8; --border: #2d575c; --accent: #5eead4; --accent-2: #99f6e4;
+      --accent-soft: #123f42; --accent-text: #062224; --search-bg: linear-gradient(135deg, #5eead4, #93c5fd);
+      --search-bg-hover: linear-gradient(135deg, #99f6e4, #bfdbfe); --search-text: #062224; --thead: #17464b;
+    }
+    body[data-palette="viola"] {
+      --bg: #fbf7ff; --bg-soft: #f4ecff; --surface: #ffffff; --surface-2: #efe4ff; --surface-3: #faf6ff;
+      --text: #26153f; --muted: #695b7c; --border: #ddccf4; --accent: #7c3aed; --accent-2: #5b21b6;
+      --accent-soft: #f0e7ff; --accent-text: #ffffff; --search-bg: linear-gradient(135deg, #7c3aed, #db2777);
+      --search-bg-hover: linear-gradient(135deg, #6d28d9, #be185d); --search-text: #ffffff; --thead: #efe4ff;
+    }
+    body[data-theme="dark"][data-palette="viola"] {
+      --bg: #130a20; --bg-soft: #1f1233; --surface: #25163b; --surface-2: #342052; --surface-3: #1e1232;
+      --text: #fbf7ff; --muted: #d5c3e9; --border: #533b76; --accent: #c4b5fd; --accent-2: #f0abfc;
+      --accent-soft: #372155; --accent-text: #190b2d; --search-bg: linear-gradient(135deg, #c4b5fd, #f9a8d4);
+      --search-bg-hover: linear-gradient(135deg, #ddd6fe, #fbcfe8); --search-text: #190b2d; --thead: #3a245b;
+    }
+    body[data-palette="ambra"] {
+      --bg: #fffaf1; --bg-soft: #fff3dc; --surface: #ffffff; --surface-2: #ffeed0; --surface-3: #fff8eb;
+      --text: #3b2a12; --muted: #735f43; --border: #ead2aa; --accent: #b45309; --accent-2: #92400e;
+      --accent-soft: #ffedd5; --accent-text: #ffffff; --search-bg: linear-gradient(135deg, #b45309, #0f766e);
+      --search-bg-hover: linear-gradient(135deg, #92400e, #0b5f59); --search-text: #ffffff; --thead: #ffedd5;
+    }
+    body[data-theme="dark"][data-palette="ambra"] {
+      --bg: #1b1307; --bg-soft: #2a1d0c; --surface: #30220f; --surface-2: #473115; --surface-3: #251908;
+      --text: #fff7ed; --muted: #e7caa0; --border: #6d4b22; --accent: #fdba74; --accent-2: #fed7aa;
+      --accent-soft: #4a3214; --accent-text: #281607; --search-bg: linear-gradient(135deg, #fdba74, #5eead4);
+      --search-bg-hover: linear-gradient(135deg, #fed7aa, #99f6e4); --search-text: #281607; --thead: #563a18;
+    }
+
+    * { box-sizing: border-box; }
+
+    /* Anti-rimpicciolimento su mobile: impedisce a URL, JSON e tabelle larghissime
+       di allargare il viewport e far sembrare tutta la pagina più piccola. */
+    header, main, footer, .hero, .layout, .panel, .card, .results-wrap,
+    .source-meta, .meta-box, #tableContainer, .table-wrap, pre {
+      min-width: 0;
+      max-width: 100%;
+    }
+
+    a, td, th, .meta-box div, .hint, .status, .subtitle {
+      overflow-wrap: anywhere;
+      word-break: break-word;
+    }
+
+    html {
+      font-size: 16px;
+      -webkit-text-size-adjust: 100%;
+      text-size-adjust: 100%;
+      overflow-x: hidden;
+    }
+
+    body {
+      margin: 0;
+      font-size: 1rem;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: radial-gradient(circle at top left, var(--surface-2), var(--bg) 40%, var(--bg));
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+      max-width: 100vw;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      pointer-events: none;
+      background:
+        radial-gradient(circle at 12% 8%, color-mix(in srgb, var(--accent) 18%, transparent), transparent 28%),
+        radial-gradient(circle at 86% 18%, color-mix(in srgb, #2dd4bf 16%, transparent), transparent 26%),
+        linear-gradient(180deg, var(--bg-soft), var(--bg));
+    }
+
+    header {
+      padding: 28px 20px 18px;
+      max-width: 1180px;
+      margin: 0 auto;
+    }
+
+    .hero {
+      background: linear-gradient(135deg, var(--surface), var(--surface-2));
+      border: 1px solid var(--border);
+      border-radius: 26px;
+      padding: 26px;
+      box-shadow: var(--shadow);
+      display: grid;
+      gap: 18px;
+    }
+
+    .hero-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 18px;
+      flex-wrap: wrap;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: clamp(1.7rem, 4vw, 2.7rem);
+      line-height: 1.05;
+      letter-spacing: -0.03em;
+    }
+
+    .subtitle {
+      color: var(--muted);
+      max-width: 840px;
+      font-size: 1rem;
+      line-height: 1.55;
+      margin: 0;
+    }
+
+    .toolbar {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .palette-control {
+      display: grid;
+      gap: 4px;
+      color: var(--muted);
+      font-size: .78rem;
+      font-weight: 700;
+    }
+
+    .palette-control select {
+      min-width: 168px;
+      min-height: 43px;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      padding: 9px 12px;
+      font-weight: 650;
+      box-shadow: var(--shadow-soft);
+    }
+
+    button, select, input {
+      font: inherit;
+    }
+
+    button {
+      border: 0;
+      background: var(--accent);
+      color: var(--accent-text);
+      padding: 11px 15px;
+      border-radius: 14px;
+      cursor: pointer;
+      font-weight: 700;
+      transition: transform .15s ease, background .15s ease, opacity .15s ease;
+      min-height: 43px;
+    }
+
+    button:hover { transform: translateY(-1px); background: var(--accent-2); }
+    button:disabled { opacity: .85; cursor: wait; transform: none; }
+
+    .primary-search {
+      background: var(--search-bg);
+      color: var(--search-text);
+      border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--border));
+      min-width: 104px;
+      box-shadow: 0 8px 20px rgba(15, 23, 42, 0.16);
+    }
+
+    .primary-search:hover, .primary-search:focus-visible {
+      background: var(--search-bg-hover);
+      color: var(--search-text);
+    }
+
+    .primary-search:disabled {
+      background: var(--search-bg);
+      color: var(--search-text);
+      opacity: .78;
+    }
+
+    .secondary {
+      background: transparent;
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+    .secondary:hover { background: var(--surface-2); color: var(--text); }
+
+    main {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 0 20px 34px;
+      display: grid;
+      gap: 18px;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(280px, 340px) minmax(0, 1fr);
+      gap: 18px;
+      align-items: start;
+    }
+
+    .panel, .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 22px;
+      box-shadow: var(--shadow);
+    }
+
+    .panel {
+      padding: 16px;
+      position: sticky;
+      top: 12px;
+    }
+
+    .panel h2, .card h2 {
+      margin: 0 0 12px;
+      font-size: 1.15rem;
+    }
+
+    .source-list {
+      display: grid;
+      gap: 9px;
+    }
+
+    .source-btn {
+      text-align: left;
+      padding: 13px 14px;
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      background: linear-gradient(180deg, var(--surface-3), var(--surface-2));
+      color: var(--text);
+      display: grid;
+      gap: 3px;
+      cursor: pointer;
+    }
+
+    .source-btn:hover {
+      border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+      transform: translateY(-1px);
+    }
+
+    .source-btn.active {
+      border-color: var(--accent);
+      background: linear-gradient(180deg, var(--accent-soft), var(--surface-2));
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent), var(--shadow-soft);
+    }
+
+    .source-btn strong { font-size: .96rem; }
+    .source-btn span { color: var(--muted); font-size: .82rem; line-height: 1.25; }
+
+    .card {
+      padding: 20px;
+      display: grid;
+      gap: 16px;
+    }
+
+    .source-meta {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .meta-box {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      padding: 13px;
+      border-radius: 16px;
+    }
+
+    .meta-box small {
+      color: var(--muted);
+      display: block;
+      margin-bottom: 5px;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+      font-weight: 800;
+      font-size: .72rem;
+    }
+
+    .meta-box div {
+      line-height: 1.35;
+      word-break: break-word;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+    }
+
+    input, select {
+      width: 100%;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      padding: 12px 13px;
+      border-radius: 14px;
+      min-height: 43px;
+      outline: none;
+    }
+
+    input:focus, select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
+    }
+
+    .hint {
+      color: var(--muted);
+      font-size: .9rem;
+      line-height: 1.52;
+      margin: 0;
+    }
+
+    .status {
+      display: none;
+      font-size: 1rem;
+      padding: 12px 14px;
+      border-radius: 15px;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      line-height: 1.45;
+    }
+
+    .status.show { display: block; }
+    .status.error { color: var(--danger); }
+    .status.ok { color: var(--ok); }
+
+    .results-wrap {
+      display: grid;
+      gap: 14px;
+    }
+
+    .table-wrap {
+      overflow: auto;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      max-height: 520px;
+      width: 100%;
+      max-width: 100%;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      min-width: 760px;
+      background: var(--surface);
+      table-layout: fixed;
+    }
+
+    th, td {
+      padding: 13px 14px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+      text-align: left;
+      font-size: 0.98rem;
+      line-height: 1.45;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+    }
+
+    tbody tr:nth-child(even) td { background: var(--row-alt); }
+    tbody tr:hover td { background: color-mix(in srgb, var(--accent-soft) 72%, var(--surface)); }
+
+    th {
+      position: sticky;
+      top: 0;
+      background: var(--thead);
+      z-index: 1;
+      color: var(--text);
+      font-size: .82rem;
+      text-transform: uppercase;
+      letter-spacing: .035em;
+    }
+
+    a { color: var(--accent); overflow-wrap: anywhere; word-break: break-word; }
+
+    pre {
+      margin: 0;
+      background: var(--code-bg);
+      color: var(--code-text);
+      padding: 16px;
+      border-radius: 16px;
+      overflow: auto;
+      max-height: 460px;
+      font-size: 0.95rem;
+      line-height: 1.5;
+      width: 100%;
+      max-width: 100%;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .row-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      border: 1px solid var(--border);
+      background: var(--surface-2);
+      color: var(--muted);
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size: .82rem;
+      font-weight: 700;
+    }
+
+    .cards-wrap {
+      display: grid;
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    .result-card {
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      background: linear-gradient(180deg, var(--surface), var(--surface-3));
+      box-shadow: var(--shadow-soft);
+      padding: 14px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .result-card h3 {
+      margin: 0;
+      font-size: 1rem;
+      line-height: 1.35;
+    }
+
+    .result-fields {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 9px;
+    }
+
+    .result-field {
+      border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+      background: color-mix(in srgb, var(--surface-2) 70%, transparent);
+      border-radius: 13px;
+      padding: 9px 10px;
+      min-width: 0;
+    }
+
+    .result-field small {
+      display: block;
+      color: var(--muted);
+      font-size: .72rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+      margin-bottom: 4px;
+    }
+
+    .result-field div {
+      line-height: 1.45;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+    }
+
+    footer {
+      color: var(--muted);
+      font-size: .86rem;
+      line-height: 1.45;
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 0 20px 28px;
+    }
+
+    @media (max-width: 860px) {
+      .layout { grid-template-columns: minmax(0, 1fr); }
+      .panel { position: static; }
+      .source-meta { grid-template-columns: minmax(0, 1fr); }
+      .form-grid { grid-template-columns: minmax(0, 1fr); }
+      header, main, footer { padding-left: 12px; padding-right: 12px; }
+      .hero, .card { border-radius: 18px; padding: 16px; }
+      h1 { font-size: 1.65rem; }
+      table { min-width: 620px; }
+      th, td { font-size: 0.95rem; padding: 10px; }
+      pre { font-size: 0.9rem; }
+      button, select, input { font-size: 16px; }
+    }
+
+    @media (max-width: 480px) {
+      header, main, footer { padding-left: 8px; padding-right: 8px; }
+      .hero, .card, .panel { padding: 13px; }
+      table { min-width: 560px; }
+      .row-actions { gap: 8px; }
+      button { width: 100%; }
+      .toolbar { width: 100%; }
+      .toolbar button { flex: 1 1 160px; }
+    }
+  </style>
+</head>
+<body data-theme="light" data-palette="mediterraneo">
+  <header>
+    <section class="hero">
+      <div class="hero-top">
+        <div>
+          <h1>Interrogatore di database medici</h1>
+          <p class="subtitle">Pagina HTML autonoma per consultare fonti biomediche pubbliche. Alcune fonti rispondono direttamente dal browser; altre possono fallire per limiti CORS, rate limit, autenticazione o disponibilità temporanea del servizio.</p>
+        </div>
+        <div class="toolbar">
+          <label class="palette-control" for="paletteSelect">
+            <span>Colori</span>
+            <select id="paletteSelect" aria-label="Scegli palette colori">
+              <option value="mediterraneo" selected>Mediterraneo</option>
+              <option value="clinical">Blu clinico</option>
+              <option value="viola">Viola / magenta</option>
+              <option value="ambra">Ambra / petrolio</option>
+            </select>
+          </label>
+          <button class="secondary" id="themeBtn">Tema scuro</button>
+          <button class="secondary" id="clearBtn">Pulisci risultati</button>
+        </div>
+      </div>
+      <div class="row-actions">
+        <span class="badge">HTML + JavaScript puro</span>
+        <span class="badge">REST / JSON / XML</span>
+        <span class="badge">Tabelle e risposta grezza identificata</span>
+      </div>
+    </section>
+  </header>
+
+  <main>
+    <section class="layout">
+      <aside class="panel">
+        <h2>Fonti interrogabili</h2>
+        <div class="source-list" id="sourceList"></div>
+      </aside>
+
+      <section class="card">
+        <div>
+          <h2 id="sourceTitle"></h2>
+          <p class="hint" id="sourceDescription"></p>
+        </div>
+
+        <div class="source-meta">
+          <div class="meta-box">
+            <small>Dati disponibili</small>
+            <div id="sourceData"></div>
+          </div>
+          <div class="meta-box">
+            <small>Endpoint usato</small>
+            <div><a id="endpointLink" href="#" target="_blank" rel="noopener"></a></div>
+          </div>
+        </div>
+
+        <div>
+          <label for="queryInput"><strong>Termine da cercare</strong></label>
+          <div class="form-grid" style="margin-top: 8px;">
+            <input id="queryInput" type="search" placeholder="Inserisci un termine" autocomplete="off" />
+            <button id="searchBtn" class="primary-search">Cerca</button>
+          </div>
+          <div style="margin-top: 12px;">
+            <label for="resultLimitInput"><strong>Numero risultati</strong></label>
+            <input id="resultLimitInput" type="text" value="20" placeholder="20 oppure tutti" inputmode="numeric" style="margin-top: 8px; max-width: 220px;" />
+            <p class="hint">Il valore predefinito è <strong>20</strong>. Scrivi <strong>tutti</strong> per chiedere il massimo consentito nella singola richiesta. Molti servizi impongono comunque un limite tecnico o usano paginazione.</p>
+          </div>
+          <p class="hint" id="exampleHint"></p>
+        </div>
+
+        <div class="row-actions">
+          <button class="secondary" id="openUrlBtn">Apri URL richiesta</button>
+          <button class="secondary" id="copyUrlBtn">Copia URL richiesta</button>
+          <button class="secondary" id="downloadJsonBtn">Scarica risposta grezza</button>
+          <button class="secondary" id="downloadExcelBtn">Scarica risultati Excel</button>
+          <span class="badge" id="rawFormatBadge">Formato: —</span>
+          <span class="badge" id="resultCount">0 risultati</span>
+        </div>
+
+        <div class="status" id="statusBox"></div>
+
+        <div class="results-wrap">
+          <div id="tableContainer"></div>
+          <div>
+            <h2>Risposta grezza <span class="badge" id="rawFormatTitle">formato non ancora rilevato</span></h2>
+            <pre id="rawOutput">Nessuna interrogazione eseguita.</pre>
+          </div>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <footer>
+    Nota: questa pagina non fornisce diagnosi, ma permette consultazioni documentali e didattiche. Per fonti con autenticazione, come BioPortal, LOINC API o WHO ICD API, conviene usare un piccolo backend intermedio per non esporre chiavi o token nel codice HTML.
+  </footer>
+
+  <script>
+    const SOURCES = [
+      {
+        id: "clinicaltrials",
+        name: "ClinicalTrials.gov",
+        short: "Sperimentazioni cliniche",
+        description: "Ricerca negli studi clinici registrati su ClinicalTrials.gov.",
+        data: "Studi clinici, patologie, interventi, fase, sponsor, stato di reclutamento, sedi, criteri e risultati.",
+        endpoint: "https://clinicaltrials.gov/api/v2/studies",
+        example: "Esempi: diabetes, melanoma, aspirin, hypertension",
+        defaultQuery: "diabetes",
+        allLimit: 1000,
+        buildUrl: (q, n) => `https://clinicaltrials.gov/api/v2/studies?query.term=${encodeURIComponent(q)}&pageSize=${limitFor(activeSource, n)}`,
+        parse: data => (data.studies || []).map((s, idx) => {
+          const p = s.protocolSection || {};
+          const id = p.identificationModule?.nctId || "";
+          const briefTitle = p.identificationModule?.briefTitle || "";
+          const officialTitle = p.identificationModule?.officialTitle || "";
+          const displayTitle = briefTitle || officialTitle || id || `Studio ${idx + 1}`;
+          const url = id ? `https://clinicaltrials.gov/study/${id}` : "";
+          return {
+            "#": idx + 1,
+            "Titolo / documento": url
+              ? `<a href="${url}" target="_blank" rel="noopener">${escapeHtml(displayTitle)}</a>`
+              : escapeHtml(displayTitle),
+            "NCT ID": id,
+            "Titolo ufficiale": officialTitle && officialTitle !== briefTitle ? officialTitle : "",
+            "Stato": p.statusModule?.overallStatus || "",
+            "Condizioni": (p.conditionsModule?.conditions || []).join(", "),
+            "Interventi": (p.armsInterventionsModule?.interventions || []).map(i => i.name).filter(Boolean).slice(0, 4).join(", "),
+            "Fasi": (p.designModule?.phases || []).join(", "),
+            "Sponsor": p.sponsorCollaboratorsModule?.leadSponsor?.name || ""
+          };
+        })
+      },
+      {
+        id: "pubmed",
+        name: "PubMed / NCBI ESearch",
+        short: "Articoli biomedici",
+        description: "Ricerca bibliografica in PubMed tramite NCBI E-utilities.",
+        data: "PMID, titolo dell'articolo, rivista, data di pubblicazione, autori principali e link alla scheda PubMed.",
+        endpoint: "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi",
+        example: "Esempi: Helicobacter pylori, glioblastoma, fasting cancer",
+        defaultQuery: "Helicobacter pylori",
+        allLimit: 200,
+        buildUrl: (q, n) => `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=${encodeURIComponent(q)}&retmode=json&retmax=${limitFor(activeSource, n)}`,
+        parse: data => {
+          const result = data.pubmedSummary || data.result || {};
+          const ids = result.uids || data.esearchresult?.idlist || [];
+          return ids.map((pmid, idx) => {
+            const item = result[pmid] || {};
+            const title = item.title || "Titolo non disponibile dalla risposta sintetica";
+            const authors = (item.authors || []).slice(0, 4).map(a => a.name).filter(Boolean).join(", ");
+            return {
+              "#": idx + 1,
+              "PMID": `<a href="https://pubmed.ncbi.nlm.nih.gov/${pmid}/" target="_blank" rel="noopener">${pmid}</a>`,
+              "Titolo": `<a href="https://pubmed.ncbi.nlm.nih.gov/${pmid}/" target="_blank" rel="noopener">${escapeHtml(title)}</a>`,
+              "Rivista": item.fulljournalname || item.source || "",
+              "Data": item.pubdate || "",
+              "Autori": authors
+            };
+          });
+        }
+      },
+      {
+        id: "openfda-label",
+        name: "openFDA - Drug Label",
+        short: "Etichette farmaci FDA",
+        description: "Cerca informazioni regolatorie e schede tecniche FDA relative ai farmaci.",
+        data: "Indicazioni, avvertenze, controindicazioni, reazioni avverse, dosaggio, principio attivo, brand name, produttore.",
+        endpoint: "https://api.fda.gov/drug/label.json",
+        example: "Esempi: aspirin, ibuprofen, metformin, lisinopril",
+        defaultQuery: "aspirin",
+        allLimit: 100,
+        buildUrl: (q, n) => `https://api.fda.gov/drug/label.json?search=openfda.brand_name:${encodeURIComponent(q)}+openfda.generic_name:${encodeURIComponent(q)}&limit=${limitFor(activeSource, n)}`,
+        parse: data => (data.results || []).map(r => ({
+          "Farmaco": (r.openfda?.brand_name || r.openfda?.generic_name || ["-"]).join(", "),
+          "Principio attivo": (r.openfda?.substance_name || []).join(", "),
+          "Produttore": (r.openfda?.manufacturer_name || []).join(", "),
+          "Indicazioni": firstText(r.indications_and_usage),
+          "Avvertenze": firstText(r.warnings)
+        }))
+      },
+      {
+        id: "openfda-event",
+        name: "openFDA - Eventi avversi",
+        short: "FAERS farmaci",
+        description: "Consulta segnalazioni di eventi avversi farmacologici raccolte da FDA FAERS.",
+        data: "Farmaco sospetto, reazione avversa, esito, età/sesso quando presenti, paese, data ricezione, seriousness.",
+        endpoint: "https://api.fda.gov/drug/event.json",
+        example: "Esempi: aspirin, metformin, warfarin",
+        defaultQuery: "metformin",
+        allLimit: 100,
+        buildUrl: (q, n) => `https://api.fda.gov/drug/event.json?search=patient.drug.medicinalproduct:${encodeURIComponent(q)}&limit=${limitFor(activeSource, n)}`,
+        parse: data => (data.results || []).map(r => {
+          const reactions = (r.patient?.reaction || []).map(x => x.reactionmeddrapt).filter(Boolean);
+          const drugs = (r.patient?.drug || []).map(x => x.medicinalproduct).filter(Boolean);
+          return {
+            "Farmaci riportati": drugs.slice(0, 4).join(", "),
+            "Reazioni": reactions.slice(0, 5).join(", "),
+            "Sesso": r.patient?.patientsex || "",
+            "Età": r.patient?.patientonsetage || "",
+            "Paese": r.occurcountry || "",
+            "Data ricezione": r.receivedate || ""
+          };
+        })
+      },
+      {
+        id: "rxnorm",
+        name: "RxNorm / RxNav",
+        short: "Farmaci normalizzati",
+        description: "Ricerca farmaci e codici RxCUI nel sistema RxNorm della National Library of Medicine.",
+        data: "Nomi normalizzati, brand, ingredienti, forme farmaceutiche, codici RxCUI e relazioni tra concetti farmacologici.",
+        endpoint: "https://rxnav.nlm.nih.gov/REST/drugs.json",
+        example: "Esempi: aspirin, paracetamol, atorvastatin",
+        defaultQuery: "aspirin",
+        buildUrl: q => `https://rxnav.nlm.nih.gov/REST/drugs.json?name=${encodeURIComponent(q)}`,
+        parse: data => {
+          const groups = data.drugGroup?.conceptGroup || [];
+          return groups.flatMap(g => (g.conceptProperties || []).map(c => ({
+            "TTY": g.tty || "",
+            "RxCUI": c.rxcui || "",
+            "Nome": c.name || "",
+            "Sinonimo": c.synonym || ""
+          })));
+        }
+      },
+      {
+        id: "icd10cm",
+        name: "NLM Clinical Tables - ICD-10-CM",
+        short: "Codici diagnosi",
+        description: "Autocomplete e ricerca di codici ICD-10-CM tramite Clinical Tables Search Service.",
+        data: "Codici ICD-10-CM, descrizioni diagnostiche e termini clinici associati.",
+        endpoint: "https://clinicaltables.nlm.nih.gov/api/icd10cm/v3/search",
+        example: "Esempi: diabetes, asthma, myocardial infarction",
+        defaultQuery: "diabetes",
+        allLimit: 500,
+        buildUrl: (q, n) => `https://clinicaltables.nlm.nih.gov/api/icd10cm/v3/search?sf=code,name&terms=${encodeURIComponent(q)}&maxList=${limitFor(activeSource, n)}`,
+        parse: data => {
+          const rows = data[3] || [];
+          return rows.map(r => ({ "Codice": r[0], "Descrizione": r[1] }));
+        }
+      },
+      {
+        id: "conditions",
+        name: "NLM Clinical Tables - Conditions",
+        short: "Condizioni mediche",
+        description: "Ricerca condizioni mediche, sinonimi e codici associati.",
+        data: "Condizioni mediche, sinonimi, ICD-10-CM, ICD-9-CM e concetti correlati.",
+        endpoint: "https://clinicaltables.nlm.nih.gov/api/conditions/v3/search",
+        example: "Esempi: migraine, hypertension, anemia",
+        defaultQuery: "hypertension",
+        allLimit: 500,
+        buildUrl: (q, n) => `https://clinicaltables.nlm.nih.gov/api/conditions/v3/search?terms=${encodeURIComponent(q)}&maxList=${limitFor(activeSource, n)}`,
+        parse: data => {
+          const rows = data[3] || [];
+          return rows.map(r => ({ "Nome": r[0], "Codice/ID": r[1] || "", "Extra": JSON.stringify(r.slice(2)) }));
+        }
+      },
+      {
+        id: "hpo",
+        name: "NLM Clinical Tables - HPO",
+        short: "Fenotipi clinici",
+        description: "Ricerca termini della Human Phenotype Ontology.",
+        data: "Fenotipi, anomalie cliniche, sinonimi, codici HPO e termini usati nelle malattie rare/genetiche.",
+        endpoint: "https://clinicaltables.nlm.nih.gov/api/hpo/v3/search",
+        example: "Esempi: seizures, short stature, ataxia",
+        defaultQuery: "seizures",
+        allLimit: 500,
+        buildUrl: (q, n) => `https://clinicaltables.nlm.nih.gov/api/hpo/v3/search?terms=${encodeURIComponent(q)}&maxList=${limitFor(activeSource, n)}`,
+        parse: data => {
+          const rows = data[3] || [];
+          return rows.map(r => ({ "Termine": r[0], "HPO ID": r[1] || "", "Extra": JSON.stringify(r.slice(2)) }));
+        }
+      },
+      {
+        id: "medlineplus",
+        name: "MedlinePlus Connect",
+        short: "Info pazienti per codici",
+        description: "Restituisce informazioni sanitarie per pazienti legate a codici diagnostici ICD-10-CM. Cerca preferibilmente un codice, non una parola libera.",
+        data: "Schede educative per pazienti, link MedlinePlus, titoli, riassunti, codici collegati.",
+        endpoint: "https://connect.medlineplus.gov/service",
+        example: "Esempi: E11.9, I10, J45.909",
+        defaultQuery: "E11.9",
+        buildUrl: q => `https://connect.medlineplus.gov/service?mainSearchCriteria.v.cs=2.16.840.1.113883.6.90&mainSearchCriteria.v.c=${encodeURIComponent(q)}&knowledgeResponseType=application/json`,
+        parse: data => {
+          const entries = data.feed?.entry || [];
+          return entries.map(e => ({
+            "Titolo": e.title?._value || e.title || "",
+            "Link": e.link?.[0]?.href ? `<a href="${e.link[0].href}" target="_blank" rel="noopener">Apri</a>` : "",
+            "Riassunto": stripHtml(e.summary?._value || e.summary || "")
+          }));
+        }
+      },
+      {
+        id: "who-gho",
+        name: "WHO GHO OData",
+        short: "Indicatori sanitari WHO",
+        description: "Ricerca nel catalogo degli indicatori Global Health Observatory dell'OMS.",
+        data: "Indicatori sanitari mondiali su mortalità, fattori di rischio, vaccinazioni, malattie, sistemi sanitari e Paesi.",
+        endpoint: "https://ghoapi.azureedge.net/api/Indicator",
+        example: "Esempi: mortality, tuberculosis, vaccination, obesity",
+        defaultQuery: "mortality",
+        allLimit: 1000,
+        buildUrl: (q, n) => `https://ghoapi.azureedge.net/api/Indicator?$filter=contains(IndicatorName,%27${encodeURIComponent(q).replace(/'/g, "%27")}%27)&$top=${limitFor(activeSource, n)}`,
+        parse: data => (data.value || []).map(r => ({
+          "Codice": r.IndicatorCode || "",
+          "Indicatore": r.IndicatorName || "",
+          "Lingua": r.Language || ""
+        }))
+      },
+      {
+        id: "ensembl",
+        name: "Ensembl REST - Gene lookup",
+        short: "Genetica",
+        description: "Ricerca un gene umano per simbolo e restituisce annotazioni Ensembl.",
+        data: "ID Ensembl, biotipo, coordinate genomiche, strand, descrizione, specie, assembly.",
+        endpoint: "https://rest.ensembl.org/lookup/symbol/homo_sapiens/",
+        example: "Esempi: BRCA1, TP53, APOE, CFTR",
+        defaultQuery: "BRCA1",
+        buildUrl: q => `https://rest.ensembl.org/lookup/symbol/homo_sapiens/${encodeURIComponent(q)}?content-type=application/json`,
+        parse: data => [{
+          "Gene": data.display_name || "",
+          "Ensembl ID": data.id || "",
+          "Biotipo": data.biotype || "",
+          "Cromosoma": data.seq_region_name || "",
+          "Inizio": data.start || "",
+          "Fine": data.end || "",
+          "Descrizione": data.description || ""
+        }]
+      },
+      {
+        id: "uniprot",
+        name: "UniProt REST",
+        short: "Proteine",
+        description: "Ricerca proteine UniProtKB per nome di gene, proteina o termine libero.",
+        data: "Proteine, geni, organismi, funzioni, accessioni, annotazioni e collegamenti a malattie/varianti quando presenti.",
+        endpoint: "https://rest.uniprot.org/uniprotkb/search",
+        example: "Esempi: insulin, BRCA1, hemoglobin, APOE",
+        defaultQuery: "insulin",
+        allLimit: 500,
+        buildUrl: (q, n) => `https://rest.uniprot.org/uniprotkb/search?query=${encodeURIComponent(q)}&format=json&size=${limitFor(activeSource, n)}`,
+        parse: data => (data.results || []).map(r => ({
+          "Accessione": r.primaryAccession ? `<a href="https://www.uniprot.org/uniprotkb/${r.primaryAccession}" target="_blank" rel="noopener">${r.primaryAccession}</a>` : "",
+          "Proteina": r.proteinDescription?.recommendedName?.fullName?.value || r.proteinDescription?.submissionNames?.[0]?.fullName?.value || "",
+          "Gene": (r.genes || []).map(g => g.geneName?.value).filter(Boolean).join(", "),
+          "Organismo": r.organism?.scientificName || "",
+          "Lunghezza": r.sequence?.length || ""
+        }))
+      }
+    ];
+
+    let activeSource = SOURCES[0];
+    let lastUrl = "";
+    let lastRaw = null;
+    let lastRawText = "";
+    let lastRawFormat = "";
+    let lastRawMime = "text/plain;charset=utf-8";
+    let lastRawExtension = "txt";
+    let lastRows = [];
+    let lastCols = [];
+
+    const body = document.body;
+    const sourceList = document.getElementById("sourceList");
+    const sourceTitle = document.getElementById("sourceTitle");
+    const sourceDescription = document.getElementById("sourceDescription");
+    const sourceData = document.getElementById("sourceData");
+    const endpointLink = document.getElementById("endpointLink");
+    const queryInput = document.getElementById("queryInput");
+    const resultLimitInput = document.getElementById("resultLimitInput");
+    const exampleHint = document.getElementById("exampleHint");
+    const searchBtn = document.getElementById("searchBtn");
+    const statusBox = document.getElementById("statusBox");
+    const tableContainer = document.getElementById("tableContainer");
+    const rawOutput = document.getElementById("rawOutput");
+    const resultCount = document.getElementById("resultCount");
+    const rawFormatBadge = document.getElementById("rawFormatBadge");
+    const rawFormatTitle = document.getElementById("rawFormatTitle");
+
+    function init() {
+      renderSourceButtons();
+      selectSource(SOURCES[0].id);
+      bindEvents();
+    }
+
+    function bindEvents() {
+      document.getElementById("themeBtn").addEventListener("click", toggleTheme);
+      document.getElementById("paletteSelect").addEventListener("change", e => setPalette(e.target.value));
+      document.getElementById("clearBtn").addEventListener("click", clearResults);
+      searchBtn.addEventListener("click", runSearch);
+      queryInput.addEventListener("keydown", e => { if (e.key === "Enter") runSearch(); });
+      resultLimitInput.addEventListener("keydown", e => { if (e.key === "Enter") runSearch(); });
+      document.getElementById("openUrlBtn").addEventListener("click", () => {
+        const url = getCurrentUrl();
+        window.open(url, "_blank", "noopener");
+      });
+      document.getElementById("copyUrlBtn").addEventListener("click", async () => {
+        const url = getCurrentUrl();
+        await navigator.clipboard.writeText(url);
+        showStatus("URL copiato negli appunti.", "ok");
+      });
+      document.getElementById("downloadJsonBtn").addEventListener("click", downloadRaw);
+      document.getElementById("downloadExcelBtn").addEventListener("click", downloadExcel);
+    }
+
+    function renderSourceButtons() {
+      sourceList.innerHTML = "";
+      SOURCES.forEach(src => {
+        const btn = document.createElement("button");
+        btn.className = "source-btn";
+        btn.dataset.id = src.id;
+        btn.innerHTML = `<strong>${escapeHtml(src.name)}</strong><span>${escapeHtml(src.short)}</span>`;
+        btn.addEventListener("click", () => selectSource(src.id));
+        sourceList.appendChild(btn);
+      });
+    }
+
+    function selectSource(id) {
+      activeSource = SOURCES.find(s => s.id === id) || SOURCES[0];
+      document.querySelectorAll(".source-btn").forEach(b => b.classList.toggle("active", b.dataset.id === activeSource.id));
+      sourceTitle.textContent = activeSource.name;
+      sourceDescription.textContent = activeSource.description;
+      sourceData.textContent = activeSource.data;
+      endpointLink.textContent = activeSource.endpoint;
+      endpointLink.href = activeSource.endpoint;
+      queryInput.value = activeSource.defaultQuery;
+      queryInput.placeholder = activeSource.example;
+      exampleHint.textContent = activeSource.example;
+      clearResults(false);
+    }
+
+    async function runSearch() {
+      const q = queryInput.value.trim();
+      if (!q) {
+        showStatus("Inserisci un termine di ricerca.", "error");
+        return;
+      }
+
+      const n = getRequestedLimit();
+      const url = activeSource.buildUrl(q, n);
+      lastUrl = url;
+      searchBtn.disabled = true;
+      showStatus("Interrogazione in corso...", "");
+      rawOutput.textContent = "Caricamento...";
+      tableContainer.innerHTML = "";
+      resultCount.textContent = "0 risultati";
+
+      try {
+        const response = await fetch(url, {
+          headers: { "Accept": "application/json, application/xml, text/xml, text/csv, text/plain, */*" }
+        });
+        if (!response.ok) throw new Error(`Errore HTTP ${response.status} ${response.statusText}`);
+        const text = await response.text();
+        let data = parseResponseText(text, response.headers.get("content-type") || "");
+
+        if (activeSource.id === "pubmed") {
+          data = await enrichPubMedWithTitles(data);
+        }
+
+        const formatted = formatRawForDisplay(data, text, response.headers.get("content-type") || "");
+        lastRaw = data;
+        lastRawText = formatted.text;
+        lastRawFormat = formatted.format;
+        lastRawMime = formatted.mime;
+        lastRawExtension = formatted.extension;
+        updateRawFormatBadge();
+        rawOutput.textContent = lastRawText;
+
+        const rows = activeSource.parse(data);
+        renderTable(rows);
+        const limitText = getRequestedLimit() ? `Risultati richiesti: ${getRequestedLimit()}.` : `Risultati richiesti: tutti quelli consentiti nella singola richiesta.`;
+        showStatus(`Interrogazione completata. ${limitText} Formato risposta grezza: ${lastRawFormat}. URL: ${url}`, "ok");
+      } catch (err) {
+        lastRaw = null;
+        lastRawText = "";
+        lastRawFormat = "errore";
+        lastRawMime = "text/plain;charset=utf-8";
+        lastRawExtension = "txt";
+        updateRawFormatBadge();
+        rawOutput.textContent = String(err);
+        tableContainer.innerHTML = "";
+        resultCount.textContent = "0 risultati";
+        showStatus("Errore nella richiesta. Possibili cause: CORS, servizio non disponibile, query non valida, endpoint cambiato o limite temporaneo dell'API. Prova anche ad aprire l'URL richiesta.", "error");
+      } finally {
+        searchBtn.disabled = false;
+      }
+    }
+
+    function renderTable(rows) {
+      if (!Array.isArray(rows) || rows.length === 0) {
+        lastRows = [];
+        lastCols = [];
+        tableContainer.innerHTML = `<div class="status show">Nessun risultato tabellare disponibile per questa query.</div>`;
+        resultCount.textContent = "0 risultati";
+        return;
+      }
+      const cols = [...new Set(rows.flatMap(r => Object.keys(r)))];
+      lastRows = rows;
+      lastCols = cols;
+      const html = `
+        <div class="cards-wrap">
+          ${rows.map((r, index) => renderResultCard(r, cols, index)).join("")}
+        </div>
+        <details style="margin-top: 14px;">
+          <summary class="badge" style="cursor:pointer;">Mostra anche tabella tecnica</summary>
+          <div class="table-wrap" style="margin-top: 10px;">
+            <table>
+              <thead><tr>${cols.map(c => `<th>${escapeHtml(c)}</th>`).join("")}</tr></thead>
+              <tbody>
+                ${rows.map(r => `<tr>${cols.map(c => `<td>${sanitizeCell(r[c])}</td>`).join("")}</tr>`).join("")}
+              </tbody>
+            </table>
+          </div>
+        </details>`;
+      tableContainer.innerHTML = html;
+      resultCount.textContent = `${rows.length} risultati`;
+    }
+
+    function renderResultCard(row, cols, index) {
+      const titleCol = pickTitleColumn(row, cols);
+      const title = titleCol ? sanitizeCell(row[titleCol]) : `Risultato ${index + 1}`;
+      const remaining = cols.filter(c => c !== titleCol && row[c] !== undefined && row[c] !== null && String(row[c]).trim() !== "");
+      return `
+        <article class="result-card">
+          <h3>${title || `Risultato ${index + 1}`}</h3>
+          <div class="result-fields">
+            ${remaining.map(c => `<div class="result-field"><small>${escapeHtml(c)}</small><div>${sanitizeCell(row[c])}</div></div>`).join("")}
+          </div>
+        </article>`;
+    }
+
+    function pickTitleColumn(row, cols) {
+      const preferred = ["Titolo / documento", "Titolo", "Nome", "Farmaco", "Termine", "Descrizione", "Codice", "PMID"];
+      return preferred.find(c => cols.includes(c) && row[c]) || cols.find(c => row[c]);
+    }
+
+    function getCurrentUrl() {
+      const q = queryInput.value.trim() || activeSource.defaultQuery;
+      return activeSource.buildUrl(q, getRequestedLimit());
+    }
+
+    function getRequestedLimit() {
+      const raw = (resultLimitInput?.value || "").trim().toLowerCase();
+      if (!raw || raw === "tutti" || raw === "all") return null;
+      const n = Number.parseInt(raw, 10);
+      if (!Number.isFinite(n) || n <= 0) return null;
+      return n;
+    }
+
+    function limitFor(src, requested) {
+      const max = src.allLimit || 100;
+      if (requested === null || requested === undefined) return max;
+      return Math.max(1, Math.min(requested, max));
+    }
+
+    function downloadRaw() {
+      if (!lastRawText) {
+        showStatus("Non c'è ancora una risposta da scaricare.", "error");
+        return;
+      }
+      const blob = new Blob([lastRawText], { type: lastRawMime });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = `${activeSource.id}_${new Date().toISOString().slice(0,19).replace(/[:T]/g,"-")}.${lastRawExtension}`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(a.href);
+      showStatus(`Risposta grezza salvata come file .${lastRawExtension} (${lastRawFormat}).`, "ok");
+    }
+
+    function downloadExcel() {
+      if (!lastRows.length || !lastCols.length) {
+        showStatus("Non ci sono ancora risultati tabellari da salvare in Excel.", "error");
+        return;
+      }
+
+      if (window.XLSX) {
+        downloadTrueXlsx();
+      } else {
+        downloadExcelXmlFallback();
+      }
+    }
+
+    function downloadTrueXlsx() {
+      const requestUrl = lastUrl || getCurrentUrl();
+      const query = queryInput.value.trim() || activeSource.defaultQuery;
+      const aoa = [
+        ["Fonte", activeSource.name],
+        ["Query", query],
+        ["URL richiesta", requestUrl],
+        ["Risultati esportati", lastRows.length],
+        [],
+        lastCols
+      ];
+
+      lastRows.forEach(row => {
+        aoa.push(lastCols.map(col => extractCellForExcel(row[col]).text));
+      });
+
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.aoa_to_sheet(aoa);
+
+      if (ws["B3"]) {
+        ws["B3"].l = { Target: requestUrl, Tooltip: "Apri URL richiesta" };
+      }
+
+      lastRows.forEach((row, rIndex) => {
+        lastCols.forEach((col, cIndex) => {
+          const cellInfo = extractCellForExcel(row[col]);
+          if (cellInfo.url) {
+            const addr = XLSX.utils.encode_cell({ r: rIndex + 6, c: cIndex });
+            if (ws[addr]) ws[addr].l = { Target: cellInfo.url, Tooltip: cellInfo.text || cellInfo.url };
+          }
+        });
+      });
+
+      ws["!cols"] = lastCols.map(col => ({ wch: Math.min(48, Math.max(14, String(col).length + 8)) }));
+      XLSX.utils.book_append_sheet(wb, ws, safeSheetName(activeSource.name));
+
+      const fileName = `${activeSource.id}_risultati_${new Date().toISOString().slice(0,19).replace(/[:T]/g,"-")}.xlsx`;
+      XLSX.writeFile(wb, fileName, { bookType: "xlsx" });
+      showStatus("Risultati salvati come vero file .xlsx. I collegamenti sono stati esportati come link nativi di Excel.", "ok");
+    }
+
+    function downloadExcelXmlFallback() {
+      const requestUrl = lastUrl || getCurrentUrl();
+      const query = queryInput.value.trim() || activeSource.defaultQuery;
+      const rows = [
+        [cellText("Fonte"), cellText(activeSource.name)],
+        [cellText("Query"), cellText(query)],
+        [cellText("URL richiesta"), cellLink(requestUrl, requestUrl)],
+        [cellText("Risultati esportati"), cellText(lastRows.length)],
+        [],
+        lastCols.map(cellText)
+      ];
+
+      lastRows.forEach(row => {
+        rows.push(lastCols.map(col => {
+          const info = extractCellForExcel(row[col]);
+          return info.url ? cellLink(info.text || info.url, info.url) : cellText(info.text);
+        }));
+      });
+
+      const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<?mso-application progid="Excel.Sheet"?>
+<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:o="urn:schemas-microsoft-com:office:office"
+ xmlns:x="urn:schemas-microsoft-com:office:excel"
+ xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">
+ <Worksheet ss:Name="${xmlAttr(safeSheetName(activeSource.name))}">
+  <Table>
+   ${rows.map(r => `<Row>${r.join("")}</Row>`).join("\n   ")}
+  </Table>
+ </Worksheet>
+</Workbook>`;
+      const blob = new Blob([xml], { type: "application/vnd.ms-excel;charset=utf-8" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = `${activeSource.id}_risultati_${new Date().toISOString().slice(0,19).replace(/[:T]/g,"-")}.xml`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(a.href);
+      showStatus("La libreria XLSX non è disponibile: ho salvato un file Excel XML compatibile con Excel, con link mantenuti.", "ok");
+    }
+
+    function extractCellForExcel(value) {
+      if (value === undefined || value === null) return { text: "", url: "" };
+      const html = String(value);
+      const doc = new DOMParser().parseFromString(`<div>${html}</div>`, "text/html");
+      const a = doc.querySelector("a[href]");
+      if (a) return { text: a.textContent.trim() || a.href, url: a.getAttribute("href") || "" };
+      return { text: doc.body.textContent || stripHtml(html), url: "" };
+    }
+
+    function cellText(value) {
+      return `<Cell><Data ss:Type="String">${xmlText(value)}</Data></Cell>`;
+    }
+
+    function cellLink(value, href) {
+      return `<Cell ss:HRef="${xmlAttr(href)}"><Data ss:Type="String">${xmlText(value)}</Data></Cell>`;
+    }
+
+    function safeSheetName(name) {
+      return String(name || "Risultati").replace(/[\\/?*\[\]:]/g, " ").slice(0, 31) || "Risultati";
+    }
+
+    function xmlText(v) {
+      return String(v ?? "").replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
+    }
+
+    function xmlAttr(v) {
+      return xmlText(v).replaceAll('"', "&quot;");
+    }
+
+    function escapeAttribute(v) {
+      return String(v ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;");
+    }
+
+    function decodeHtmlEntities(v) {
+      const d = document.createElement("textarea");
+      d.innerHTML = v || "";
+      return d.value;
+    }
+
+    function clearResults(clearStatus = true) {
+      tableContainer.innerHTML = "";
+      rawOutput.textContent = "Nessuna interrogazione eseguita.";
+      resultCount.textContent = "0 risultati";
+      lastRaw = null;
+      lastRawText = "";
+      lastRawFormat = "";
+      lastRawMime = "text/plain;charset=utf-8";
+      lastRawExtension = "txt";
+      lastRows = [];
+      lastCols = [];
+      updateRawFormatBadge();
+      lastUrl = "";
+      if (clearStatus) hideStatus();
+    }
+
+    function toggleTheme() {
+      const dark = body.getAttribute("data-theme") === "dark";
+      body.setAttribute("data-theme", dark ? "light" : "dark");
+      document.getElementById("themeBtn").textContent = dark ? "Tema scuro" : "Tema chiaro";
+    }
+
+    function setPalette(name) {
+      body.setAttribute("data-palette", name || "clinical");
+    }
+
+    function showStatus(message, type) {
+      statusBox.textContent = message;
+      statusBox.className = `status show ${type || ""}`;
+    }
+
+    function hideStatus() {
+      statusBox.className = "status";
+      statusBox.textContent = "";
+    }
+
+    function parseResponseText(text, contentType) {
+      const trimmed = text.trim();
+      const ct = contentType.toLowerCase();
+      if (ct.includes("json") || trimmed.startsWith("{") || trimmed.startsWith("[")) {
+        try { return JSON.parse(text); } catch { return text; }
+      }
+      return text;
+    }
+
+    function detectRawFormatFromText(text, contentType) {
+      const trimmed = String(text || "").trim();
+      const ct = String(contentType || "").toLowerCase();
+      if (ct.includes("json") || trimmed.startsWith("{") || trimmed.startsWith("[")) {
+        return { format: "JSON", mime: "application/json;charset=utf-8", extension: "json" };
+      }
+      if (ct.includes("xml") || trimmed.startsWith("<?xml") || /^<[A-Za-z][\s\S]*>/.test(trimmed)) {
+        return { format: "XML", mime: "application/xml;charset=utf-8", extension: "xml" };
+      }
+      if (ct.includes("csv") || trimmed.split("\n").slice(0, 3).some(line => line.includes(",") || line.includes(";"))) {
+        return { format: "CSV/testo tabellare", mime: "text/csv;charset=utf-8", extension: "csv" };
+      }
+      if (ct.includes("html") || trimmed.startsWith("<!DOCTYPE html") || trimmed.startsWith("<html")) {
+        return { format: "HTML", mime: "text/html;charset=utf-8", extension: "html" };
+      }
+      return { format: "testo semplice", mime: "text/plain;charset=utf-8", extension: "txt" };
+    }
+
+    function formatRawForDisplay(data, originalText, contentType) {
+      let text;
+      if (typeof data === "string") {
+        text = data;
+      } else {
+        text = JSON.stringify(data, null, 2);
+      }
+      const detected = detectRawFormatFromText(text || originalText, contentType);
+      if (typeof data !== "string") {
+        detected.format = detected.format === "JSON" ? "JSON" : "JSON elaborato";
+        detected.mime = "application/json;charset=utf-8";
+        detected.extension = "json";
+      }
+      return { text, ...detected };
+    }
+
+    function updateRawFormatBadge() {
+      const label = lastRawFormat ? `Formato: ${lastRawFormat}` : "Formato: —";
+      if (rawFormatBadge) rawFormatBadge.textContent = label;
+      if (rawFormatTitle) rawFormatTitle.textContent = lastRawFormat ? `formato: ${lastRawFormat}` : "formato non ancora rilevato";
+    }
+
+    async function enrichPubMedWithTitles(data) {
+      const ids = data?.esearchresult?.idlist || [];
+      if (!ids.length) return data;
+      const summaryUrl = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=pubmed&id=${ids.join(",")}&retmode=json`;
+      try {
+        const response = await fetch(summaryUrl, { headers: { "Accept": "application/json" } });
+        if (!response.ok) return data;
+        const summary = await response.json();
+        return {
+          ricercaPubMed: data,
+          urlRicerca: lastUrl,
+          urlTitoli: summaryUrl,
+          pubmedSummary: summary.result
+        };
+      } catch {
+        return data;
+      }
+    }
+
+    function firstText(value) {
+      if (!value) return "";
+      const text = Array.isArray(value) ? value[0] : value;
+      return String(text).slice(0, 420) + (String(text).length > 420 ? "..." : "");
+    }
+
+    function stripHtml(s) {
+      const d = document.createElement("div");
+      d.innerHTML = s || "";
+      return d.textContent || d.innerText || "";
+    }
+
+    function escapeHtml(v) {
+      return String(v ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function sanitizeCell(v) {
+      if (v === undefined || v === null) return "";
+      const s = String(v);
+      if (/^<a\s/i.test(s) && /<\/a>$/.test(s)) return s;
+      return escapeHtml(s);
+    }
+
+    init();
+  </script>
+</body>
+</html>
